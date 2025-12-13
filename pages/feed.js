@@ -219,13 +219,13 @@ export default function Feed() {
 									<div className='flex-1 space-y-4'>
 										<input
 											type='text'
-											placeholder='О чем думаете?'
+											placeholder='Заголовок (попробуйте XSS)'
 											value={title}
 											onChange={e => setTitle(e.target.value)}
 											className='w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500'
 										/>
 										<textarea
-											placeholder='Поделитесь своими мыслями...'
+											placeholder='Контент поста (здесь тоже уязвимость)'
 											value={content}
 											onChange={e => setContent(e.target.value)}
 											rows={3}
@@ -277,10 +277,16 @@ export default function Feed() {
 										</p>
 									</div>
 								</div>
+								{/*уязвимость*/}
+								<h3
+									className='text-xl font-bold text-gray-800 mb-2'
+									dangerouslySetInnerHTML={{ __html: post.title }}
+								/>
+								<div
+									className='text-gray-600 leading-relaxed mb-4'
+									dangerouslySetInnerHTML={{ __html: post.content }}
+								/>
 
-								<h3 className='text-xl font-bold text-gray-800 mb-2'>
-									{post.title}
-								</h3>
 								<p className='text-gray-600 leading-relaxed mb-4'>
 									{post.content}
 								</p>
