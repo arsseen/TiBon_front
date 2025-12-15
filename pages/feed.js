@@ -126,6 +126,11 @@ export default function Feed() {
 													⚙️ Настройки
 												</div>
 											</Link>
+											<Link href='/upload'>
+												<button className='px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-full'>
+													📁 Файлы
+												</button>
+											</Link>
 											<hr className='my-2' />
 											<button
 												onClick={handleLogout}
