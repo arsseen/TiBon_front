@@ -1,27 +1,42 @@
 import Link from 'next/link';
 import { getCurrentUser, logout } from '../utils/api';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
 
 export default function Nav() {
   const [user, setUser] = useState(null);
-  useEffect(() => setUser(getCurrentUser()), []);
+  const router = useRouter();
+  
+  useEffect(() => {
+    setUser(getCurrentUser());
+  }, []);
+
+  const handleLogout = (e) => {
+    e.preventDefault();
+    logout();
+    router.push('/login');
+  };
+
   return (
-    <div className="nav">
-      <div style={{flex:1}}>
-        <Link href="/feed">Mini Social Hub</Link>
+    <nav className="nav-bar">
+      <div className="nav-container">
+        <Link href="/feed" className="logo">MiniSocial</Link>
+        <div className="nav-links">
+          {user ? (
+            <>
+              <Link href="/feed" className="nav-btn">Home</Link>
+              <Link href="/search" className="nav-btn">Search</Link>
+              <Link href={`/profile/${user.id}`} className="nav-btn">Profile</Link>
+              <span onClick={handleLogout} className="nav-btn" style={{color:'var(--danger)'}}>Logout</span>
+            </>
+          ) : (
+            <>
+              <Link href="/login" className="nav-btn">Login</Link>
+              <Link href="/register" className="nav-btn">Sign Up</Link>
+            </>
+          )}
+        </div>
       </div>
-      <Link href="/feed">Feed</Link>
-      {user ? (
-        <>
-          <Link href={`/profile/${user.id}`}>Profile</Link>
-          <a href="#" onClick={(e)=>{e.preventDefault(); logout(); setUser(null); location.href='/login'}} style={{color:'#fff'}}>Logout</a>
-        </>
-      ) : (
-        <>
-          <Link href="/login">Login</Link>
-          <Link href="/register">Register</Link>
-        </>
-      )}
-    </div>
+    </nav>
   );
 }
