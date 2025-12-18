@@ -131,6 +131,11 @@ export default function Feed() {
 													📁 Файлы
 												</button>
 											</Link>
+											<Link href='/feed'>
+												<button className='px-4 py-2 text-purple-600 hover:bg-purple-50 rounded-full'>
+													🤖Рекомендации
+												</button>
+											</Link>
 											<hr className='my-2' />
 											<button
 												onClick={handleLogout}
@@ -224,13 +229,13 @@ export default function Feed() {
 									<div className='flex-1 space-y-4'>
 										<input
 											type='text'
-											placeholder='Заголовок (попробуйте XSS)'
+											placeholder='Заголовок'
 											value={title}
 											onChange={e => setTitle(e.target.value)}
 											className='w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500'
 										/>
 										<textarea
-											placeholder='Контент поста (здесь тоже уязвимость)'
+											placeholder='Контент поста'
 											value={content}
 											onChange={e => setContent(e.target.value)}
 											rows={3}
