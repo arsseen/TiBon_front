@@ -1,57 +1,50 @@
+import { useState } from 'react';
+import axios from 'axios';
 import Nav from '../components/Nav';
-import { API_BASE, fetchJson, getCurrentUser } from '../utils/api';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
 
 export default function Search() {
-  const [query, setQuery] = useState('');
-  const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const user = getCurrentUser();
-  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
 
-  useEffect(() => {
-    if (!user) router.push('/login');
-  }, []);
-
-  async function handleSearch(e) {
+  const handleSearch = async (e) => {
     e.preventDefault();
-    if (!query.trim()) { setUsers([]); return; }
-    setLoading(true);
     try {
-      const data = await fetchJson(`${API_BASE}/api/users/search/${query}`);
-      setUsers(data);
+      const res = await axios.post("http://localhost:8800/api/users/search", { query });
+      setResults(res.data);
     } catch (err) {
-      console.error(err);
+      console.log(err);
     }
-    setLoading(false);
-  }
+  };
 
   return (
-    <div>
+    <>
       <Nav />
       <div className="container">
-        <h2>Search Users</h2>
-        <form onSubmit={handleSearch} className="card">
+        <form onSubmit={handleSearch}>
           <input 
-            type="text"
+            className="search-bar" 
             placeholder="Search users..." 
-            value={query} 
-            onChange={e => setQuery(e.target.value)} 
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
           />
-          <button type="submit">Search</button>
         </form>
 
-        {loading && <div>Loading...</div>}
-        {users.map(u => (
-          <div key={u._id} className="card">
-            {u.avatarUrl && <img className="post-avatar" src={`${API_BASE}${u.avatarUrl}`} alt={u.username} />}
-            <Link href={`/profile/${u._id}`}><strong>{u.username}</strong></Link>
-            <div className="post-meta">{u.bio}</div>
-          </div>
-        ))}
+        <div style={{ marginTop: '20px' }}>
+          {results.map(u => (
+            <div key={u._id} className="user-list-item">
+              <img 
+                src={u.profilePicture || "https://upload.wikimedia.org/wikipedia/commons/7/7c/Profile_avatar_placeholder_large.png"} 
+                style={{ width: '40px', height: '40px', borderRadius: '50%', marginRight: '10px' }}
+              />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 'bold' }}>{u.username}</div>
+                <div style={{ color: '#888', fontSize: '0.8rem' }}>{u.email}</div>
+              </div>
+              <a href={`/profile/${u.username}`} className="btn-primary" style={{ width: 'auto', padding: '5px 15px' }}>View</a>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

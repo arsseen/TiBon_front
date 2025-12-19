@@ -1,142 +1,198 @@
+
+import { useState, useEffect } from 'react';
+import axios from 'axios';
 import Nav from '../components/Nav';
-import { API_BASE, fetchJson, getCurrentUser } from '../utils/api';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
 
 export default function Feed() {
   const [posts, setPosts] = useState([]);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [loading, setLoading] = useState(false);
-  const user = getCurrentUser();
-  const router = useRouter();
+  const [desc, setDesc] = useState("");
+  const [file, setFile] = useState(null);
+  const [user, setUser] = useState({});
 
-  useEffect(() => { 
-    if(!user) router.push('/login');
-    else loadPosts(); 
+  useEffect(() => {
+    const loggedInUser = localStorage.getItem("user");
+    if (loggedInUser) {
+      setUser(JSON.parse(loggedInUser));
+      fetchPosts(JSON.parse(loggedInUser)._id);
+    } else {
+      window.location.href = "/login";
+    }
   }, []);
 
-  async function loadPosts() {
+  const fetchPosts = async (userId) => {
     try {
-      const data = await fetchJson(`${API_BASE}/api/posts`);
-      setPosts(data);
-    } catch (e) { console.error(e); }
-  }
+      const res = await axios.get("http://localhost:8800/api/posts/timeline/" + userId);
+      setPosts(res.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
-  async function createPost(e) {
+  const handleShare = async (e) => {
     e.preventDefault();
-    if (!title && !content) return;
-    setLoading(true);
-    try {
-      const isPrivate = document.querySelector('#isPrivate')?.checked || false;
-      await fetchJson(`${API_BASE}/api/posts`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, content, userId: user.id, isPrivate })
-      });
-      setTitle('');
-      setContent('');
-      loadPosts();
-    } catch (e) {
-      alert('Error creating post');
-    } finally {
-      setLoading(false);
-    }
-  }
+    const newPost = {
+      userId: user._id,
+      desc: desc,
+    };
 
-  async function handleLike(postId, hasLiked) {
-    try {
-      await fetchJson(`${API_BASE}/api/posts/${postId}/like`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user.id })
-      });
-      loadPosts();
-    } catch (e) {
-      console.error(e);
+    if (file) {
+      const data = new FormData();
+      const fileName = Date.now() + file.name;
+      data.append("name", fileName);
+      data.append("file", file);
+      newPost.img = fileName;
+      try {
+        await axios.post("http://localhost:8800/api/posts", data); 
+        window.location.reload();
+        return;
+      } catch (err) {
+        console.log(err);
+      }
     }
-  }
-
-  async function deletePost(postId) {
-    if (!confirm('Delete this post?')) return;
+    
+    
     try {
-      await fetchJson(`${API_BASE}/api/posts/${postId}`, { method: 'DELETE' });
-      loadPosts();
-    } catch (e) {
-      alert('Failed to delete post');
+       const data = new FormData();
+       data.append("userId", user._id);
+       data.append("desc", desc);
+       if(file) data.append("file", file);
+       
+       await axios.post("http://localhost:8800/api/posts", data);
+       window.location.reload();
+    } catch (err) {
+        console.log(err);
     }
-  }
+  };
 
   return (
     <div>
-      <Nav />
-      <div className="main-container">
-        {/* Create Post Widget */}
-        <div className="card">
-          <div className="card-header">
-            <span style={{fontWeight:600}}>New Post</span>
-          </div>
-          <div style={{padding:16}}>
-            <form onSubmit={createPost}>
-              <input 
-                placeholder="Topic..." 
-                value={title} 
-                onChange={e => setTitle(e.target.value)} 
-              />
-              <textarea 
-                placeholder="What's on your mind? (Rich text supported)" 
-                value={content} 
-                onChange={e => setContent(e.target.value)} 
-                rows={3} 
-                style={{resize:'none'}}
-              />
-              <div>
-                <input type="checkbox" id="isPrivate" /> <label htmlFor="isPrivate">Make this post private</label>
-              </div>
-              <button type="submit" className="primary-btn" disabled={loading}>
-                {loading ? 'Publishing...' : 'Share'}
-              </button>
-            </form>
+      <Nav user={user} />
+      <div className="container">
+        <div className="share-box">
+          <textarea 
+            className="share-input" 
+            placeholder={`What's on your mind, ${user.username}?`}
+            rows="3"
+            onChange={(e) => setDesc(e.target.value)}
+          />
+          <div className="share-footer">
+            <input 
+              type="file" 
+              id="file" 
+              accept=".png,.jpeg,.jpg,.html" 
+              onChange={(e) => setFile(e.target.files[0])}
+              style={{ display: "none" }} 
+            />
+            <label htmlFor="file" className="action-btn" style={{ fontSize: '0.9rem' }}>
+              📷 Add Photo/File
+            </label>
+            {file && <span style={{fontSize: '0.8rem', color: 'gray'}}>{file.name}</span>}
+            <button className="btn btn-primary" style={{ width: '100px' }} onClick={handleShare}>Post</button>
           </div>
         </div>
 
-        {/* Posts Feed */}
-        {posts.map(p => (
-          <div key={p._id} className="card">
-            <div className="card-header">
-              <img 
-                src={p.author?.avatarUrl ? `${API_BASE}${p.author.avatarUrl}` : 'https://via.placeholder.com/32'} 
-                className="user-avatar-small" 
-                onError={(e)=>{e.target.src='https://via.placeholder.com/32'}}
-              />
-              <Link href={`/profile/${p.author?._id}`} className="username">
-                {p.author?.username || 'Anonymous'}
-              </Link>
-              <div className="date">{new Date(p.createdAt).toLocaleDateString()}</div>
-            </div>
-            
-            <div className="card-content">
-              <h3 style={{marginTop:0, marginBottom:8}}>
-                {p.title}
-                {p.isPrivate && <span className="privacy-badge">PRIVATE</span>}
-              </h3>
-              {/* VULNERABLE: Rendering HTML content - allows XSS */}
-              <div dangerouslySetInnerHTML={{ __html: p.content }} />
-            </div>
-
-            <div className="card-actions">
-              <button className={`like-btn ${p.likes?.some(l => l._id === user.id) ? 'liked' : ''}`} onClick={() => handleLike(p._id)}>
-                ❤️ {p.likes?.length || 0}
-              </button>
-              <Link href={`/post/${p._id}`} className="action-btn">Comments</Link>
-              {p.author?._id === user.id && (
-                <button className="delete-btn" onClick={() => deletePost(p._id)}>Delete</button>
-              )}
-            </div>
-          </div>
+        {posts.map((p) => (
+          <Post key={p._id} post={p} currentUser={user} />
         ))}
       </div>
+    </div>
+  );
+}
+
+function Post({ post, currentUser }) {
+  const [like, setLike] = useState(post.likes.length);
+  const [isLiked, setIsLiked] = useState(post.likes.includes(currentUser._id));
+  const [comments, setComments] = useState([]);
+  const [showComments, setShowComments] = useState(false);
+  const [commentText, setCommentText] = useState("");
+
+  const PF = "http://localhost:8800/uploads/"; 
+
+  const likeHandler = () => {
+    try {
+      axios.put("http://localhost:8800/api/posts/" + post._id + "/like", { userId: currentUser._id });
+    } catch (err) {}
+    setLike(isLiked ? like - 1 : like + 1);
+    setIsLiked(!isLiked);
+  };
+
+  const toggleComments = async () => {
+      if (!showComments) {
+          try {
+              const res = await axios.get(`http://localhost:8800/api/comments/${post._id}`);
+              setComments(res.data);
+          } catch(err) { console.log(err) }
+      }
+      setShowComments(!showComments);
+  };
+
+  const submitComment = async (e) => {
+      if(e.key === 'Enter' && commentText) {
+          try {
+              const res = await axios.post(`http://localhost:8800/api/comments`, {
+                  userId: currentUser._id,
+                  postId: post._id,
+                  text: commentText
+              });
+              setComments([res.data, ...comments]); 
+              setCommentText("");
+              const refreshed = await axios.get(`http://localhost:8800/api/comments/${post._id}`);
+              setComments(refreshed.data);
+          } catch(err) { console.log(err) }
+      }
+  }
+
+  return (
+    <div className="post-card">
+      <div className="post-header">
+        <img 
+            className="avatar" 
+            src={post.user?.profilePicture || "https://via.placeholder.com/150"} 
+            alt="" 
+        />
+        <span className="username">{post.user?.username || "Unknown User"}</span>
+        <span style={{marginLeft: 'auto', color: '#555', fontSize: '0.8rem'}}>
+            {new Date(post.createdAt).toDateString()}
+        </span>
+      </div>
+      
+      <div className="post-content">
+        <p dangerouslySetInnerHTML={{ __html: post.desc }}></p>
+      </div>
+
+      {post.img && (
+          post.img.endsWith(".html") ? 
+          <iframe src={PF + post.img} style={{width: '100%', height: '200px', border: 'none'}}></iframe> :
+          <img className="post-image" src={PF + post.img} alt="" />
+      )}
+
+      <div className="post-actions">
+        <button className={`action-btn ${isLiked ? "liked" : ""}`} onClick={likeHandler}>
+          ♥ {like}
+        </button>
+        <button className="action-btn" onClick={toggleComments}>
+          💬 Comment
+        </button>
+      </div>
+
+      {showComments && (
+          <div className="comments-section">
+              <input 
+                type="text" 
+                placeholder="Write a comment..." 
+                value={commentText}
+                onChange={(e) => setCommentText(e.target.value)}
+                onKeyDown={submitComment}
+                style={{marginBottom: '15px'}}
+              />
+              {comments.map(c => (
+                  <div className="comment" key={c._id}>
+                      <span className="comment-author">{c.username || "User"}: </span>
+                      <span dangerouslySetInnerHTML={{ __html: c.text }}></span>
+                  </div>
+              ))}
+          </div>
+      )}
     </div>
   );
 }

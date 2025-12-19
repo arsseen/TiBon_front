@@ -90,7 +90,6 @@ export default function PostPage() {
           </div>
           <div className="card-content">
             <h2>{post.title}</h2>
-            {/* VULNERABLE: Stored XSS in post content */}
             <div dangerouslySetInnerHTML={{ __html: post.content }} />
             <div className="stats">
               <span>❤️ {post.likes?.length || 0} likes</span>
@@ -118,7 +117,6 @@ export default function PostPage() {
                   <button className="delete-btn" style={{padding:'4px 8px', fontSize:'11px'}} onClick={() => deleteComment(c._id)}>Delete</button>
                 )}
               </div>
-              {/* VULNERABLE: Stored XSS - rendering raw comment HTML */}
               <div dangerouslySetInnerHTML={{__html: c.text}}></div>
               <div style={{marginTop:8}}>
                 <button style={{background:'none', border:'none', cursor:'pointer', color:'#0095f6', fontSize:'12px'}} onClick={() => likeComment(c._id)}>
