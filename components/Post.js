@@ -77,17 +77,17 @@ export default function Post({ post, currentUser }) {
         </div>
         
         <div style={{fontWeight:'bold', marginBottom:'5px'}}>{like} likes</div>
-
+        {/* Stored XSS */}
         <div className="caption">
             <span style={{fontWeight:'bold', marginRight:'5px'}}>{user.username}</span>
-            <span dangerouslySetInnerHTML={{ __html: post.desc }}></span>
+            <span>{post.desc}</span>
         </div>
         
         {showComments && (
             <div className="comments-section" style={{marginTop:'10px', borderTop:'1px solid #222', paddingTop:'10px'}}>
                 {comments.map(c => (
                     <div key={c._id} style={{fontSize:'0.9rem', marginBottom:'5px'}}>
-                        <b>{c.username}: </b><span dangerouslySetInnerHTML={{__html: c.text}}></span>
+                      <b>{c.username}: </b><span>{c.text}</span>
                     </div>
                 ))}
                 <input 

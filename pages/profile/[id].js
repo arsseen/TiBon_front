@@ -101,7 +101,8 @@ export default function Profile() {
             </div>
 
             <div>{profileUser.city}</div>
-            <div dangerouslySetInnerHTML={{ __html: profileUser.desc }}></div>
+            {/* Stored XSS */}
+              <div className="bio">{profileUser.desc}</div>
           </div>
         </div>
 
